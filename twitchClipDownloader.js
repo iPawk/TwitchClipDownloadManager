@@ -1,7 +1,11 @@
 function downloadSelectedVideos(){
+    var allDownloadURLs = [];
     for (var elem in document.querySelectorAll('[data-target="clips-manager-table-row"]')){
         let row = document.querySelectorAll('[data-target="clips-manager-table-row"]')[elem];
-        let boxChecked = row.getElementsByClassName('tw-checkbox__input')[0].checked;
+        if ((typeof row) != 'object'){
+            continue;
+        }
+        let boxChecked = row.getElementsByClassName('tw-checkbox__input').length > 0 && row.getElementsByClassName('tw-checkbox__input')[0] && row.getElementsByClassName('tw-checkbox__input')[0].checked;
         let jpgSource = row.getElementsByClassName('clmgr-thumb tw-flex-shrink-0 tw-mg-r-1')[0].src;
         if (boxChecked && jpgSource && jpgSource.indexOf('https://clips-media') !== -1){
             jpgSource = jpgSource.substring(38);
@@ -10,24 +14,51 @@ function downloadSelectedVideos(){
                 jpgSource = jpgSource.substr(0, jpgSource.indexOf('-preview'));
             }
             let downloadURL = 'https://clips-media-assets2.twitch.tv/' + jpgSource + '.mp4';
-            window.open(downloadURL);
+            allDownloadURLs.push(downloadURL);
+        }
+    }
+    
+    if (confirm('Download ' + allDownloadURLs.length + ' clip' + (allDownloadURLs.length == 1 ? '' : 's') + '?')){
+        for (var i = 0; i < allDownloadURLs.length; i++){
+            window.open(allDownloadURLs[i]);
         }
     }
 }
 
 function placeDownloadButton(){
-    if (!document.getElementsByClassName('clipDownloaderButton').length){
+    if (!document.getElementsByClassName('clipDownloaderButtonDark').length){
         var wrapper = document.createElement('div');
-        wrapper.innerHTML = '<button class="clipDownloaderButton">Download</button>';
-        var downloadButton = wrapper.firstChild;
-        document.getElementsByClassName('tw-align-items-center tw-flex tw-full-height tw-pd-x-1 tw-pd-y-05')[0].appendChild(downloadButton);
-        document.getElementsByClassName('clipDownloaderButton')[0].addEventListener("click", downloadSelectedVideos);
+        wrapper.innerHTML = '<button class="clipDownloaderButtonDark tw-align-items-center tw-flex-shrink-0 tw-full-height" style="margin-left: 5px;padding-left: 6px;padding-right: 6px;border-radius: 4px;"><img src="' + browser.runtime.getURL("images/downloadIconDarkMode-64.png") + '" width="18"/></button>';
+        var downloadButtonDarkMode = wrapper.firstChild;
+        document.getElementsByClassName('tw-align-items-center tw-flex tw-full-height tw-pd-x-1 tw-pd-y-05')[0].appendChild(downloadButtonDarkMode);
+        document.getElementsByClassName('clipDownloaderButtonDark')[0].addEventListener("click", downloadSelectedVideos);
+
+        wrapper = document.createElement('div');
+        wrapper.innerHTML = '<button class="clipDownloaderButtonLight tw-align-items-center tw-flex-shrink-0 tw-full-height" style="margin-left: 5px;padding-left: 6px;padding-right: 6px;border-radius: 4px;"><img src="' + browser.runtime.getURL("images/downloadIconLightMode-64.png") + '" width="18"/></button>';
+        var downloadButtonLightMode = wrapper.firstChild;
+        document.getElementsByClassName('tw-align-items-center tw-flex tw-full-height tw-pd-x-1 tw-pd-y-05')[0].appendChild(downloadButtonLightMode);
+        document.getElementsByClassName('clipDownloaderButtonLight')[0].addEventListener("click", downloadSelectedVideos);
+        
+        var css = '.clipDownloaderButtonDark:hover{ background: #404040; } .clipDownloaderButtonLight:hover{ background: #F2F2F2; } .tw-root--theme-dark .clipDownloaderButtonLight{display: none;} html:not(.tw-root--theme-dark) .clipDownloaderButtonDark{display: none;}';
+        var style = document.createElement('style');
+
+        if (style.styleSheet){
+            style.styleSheet.cssText = css;
+        }
+        else {
+            style.appendChild(document.createTextNode(css));
+        }
+
+        document.getElementsByTagName('head')[0].appendChild(style);
     }
 }
 
 function removeDownloadButton(){
-    if (document.getElementsByClassName('clipDownloaderButton').length){
-        document.getElementsByClassName('clipDownloaderButton')[0].remove();
+    if (document.getElementsByClassName('clipDownloaderButtonDark').length){
+        document.getElementsByClassName('clipDownloaderButtonDark')[0].removeEventListener("click", downloadSelectedVideos);
+        document.getElementsByClassName('clipDownloaderButtonLight')[0].removeEventListener("click", downloadSelectedVideos);
+        document.getElementsByClassName('clipDownloaderButtonDark')[0].remove();
+        document.getElementsByClassName('clipDownloaderButtonLight')[0].remove();
     }
 }
 
